@@ -1,0 +1,64 @@
+#!/usr/bin/env php
+
+<?php
+
+/*
+ *  Aplikasi Auto backup database Postgre SQL di linux
+ *  author	: Abu Dzunnuraini
+ *  email	: almprokdr@gmail.com
+ *  penggunaan di jalankan di crontab
+ *  misalkan dijalankan jam 00:30
+ *  [30 00 * * * /home/jbiru/php-pgbackup/backup]
+*/
+
+require_once __DIR__ . '/options.inc';
+
+defined('_DUMP_') or define('_DUMP_','pg_dump');
+
+defined('_DBS_PORT_') or define('_DBS_PORT_','5432');
+defined('_DBS_NAME_') or define('_DBS_NAME_',false);
+defined('_DBS_USERNAME_') or define('_DBS_USERNAME_','postgres');
+defined('_DBS_PASSWORD_') or define('_DBS_PASSWORD_','');
+defined('_DB_HOST_SERVER_') or define('_DB_HOST_SERVER_','localhost');
+
+defined('_BACKUP_PATH_') or define('_BACKUP_PATH_',false);
+defined('_BACKUP_NAME_') or define('_BACKUP_NAME_','backup');
+defined('_BACKUP_FILES_') or define('_BACKUP_FILES_',3);
+
+class app{
+
+	private static $config = [
+		'port'=>_DBS_PORT_,
+		'name'=>_DBS_NAME_,
+		'user'=>_DBS_USERNAME_,
+		'pasw'=>_DBS_PASSWORD_,
+		'host'=>_DB_HOST_SERVER_,
+		'dump'=>_DUMP_,
+		'path'=>'',
+	];
+
+	private static function Backup($opt){
+		$cmd="$opt->dump -h $opt->host -p $opt->port -d $opt->name -U $opt->user -w -c -C -Fc -f $opt->path";
+		putenv('PGPASSWORD=' . $opt->pasw); 
+		passthru($cmd);
+		echo "$cmd\n\n";
+	}
+	
+	private static function getPath(){
+		$opt=0;
+		$tgl=ceil(strtotime("+$opt day ".date('Y-m-d'))/86400);
+		$dir=$tgl % _BACKUP_FILES_;
+		return (_BACKUP_PATH_ ? _BACKUP_PATH_ : dirname(__DIR__)) . "/"._BACKUP_NAME_."-$dir.backup";
+	}
+
+	public static function start(){
+		$opt=(object)self::$config;
+		if($opt->name){
+			$opt->path=self::getPath();
+			if(file_exists($opt->path)) unlink($opt->path);
+			self::Backup($opt);
+		}
+	}
+}
+
+app::start();
