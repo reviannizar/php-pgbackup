@@ -23,7 +23,11 @@ defined('_DB_HOST_SERVER_') or define('_DB_HOST_SERVER_','localhost');
 
 defined('_BACKUP_PATH_') or define('_BACKUP_PATH_',false);
 defined('_BACKUP_NAME_') or define('_BACKUP_NAME_','backup');
+defined('_BACKUP_TYPE_') or define('_BACKUP_TYPE_','backup');	// backup / sql
 defined('_BACKUP_FILES_') or define('_BACKUP_FILES_',3);
+
+define('_TYPE_SQL_','sql');
+define('_TYPE_BACKUP_','backup');
 
 class app{
 
@@ -38,7 +42,8 @@ class app{
 	];
 
 	private static function Backup($opt){
-		$cmd="$opt->dump -h $opt->host -p $opt->port -d $opt->name -U $opt->user -w -c -C -Fc -f $opt->path";
+		if(_BACKUP_TYPE_==_TYPE_BACKUP_) $cmd="$opt->dump -h $opt->host -p $opt->port -d $opt->name -U $opt->user -w -c -C -Fc -f $opt->path";
+		else if(_BACKUP_TYPE_==_TYPE_SQL_) $cmd="$opt->dump -h $opt->host -p $opt->port -U $opt->user $opt->name >> $opt->path";
 		putenv('PGPASSWORD=' . $opt->pasw); 
 		passthru($cmd);
 		echo "$cmd\n\n";
@@ -48,7 +53,7 @@ class app{
 		$opt=0;
 		$tgl=ceil(strtotime("+$opt day ".date('Y-m-d'))/86400);
 		$dir=$tgl % _BACKUP_FILES_;
-		return (_BACKUP_PATH_ ? _BACKUP_PATH_ : dirname(__DIR__)) . "/"._BACKUP_NAME_."-$dir.backup";
+		return (_BACKUP_PATH_ ? _BACKUP_PATH_ : dirname(__DIR__)) . "/"._BACKUP_NAME_."-$dir."._BACKUP_TYPE_;
 	}
 
 	public static function start(){
